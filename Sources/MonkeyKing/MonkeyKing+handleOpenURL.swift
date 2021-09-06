@@ -357,7 +357,7 @@ extension MonkeyKing {
         if urlScheme.hasPrefix("wx") {
             let urlString = url.absoluteString
             // OAuth
-            if urlString.contains("state=Weixinauth") {
+            if urlString.contains("state=") {
                 let queryDictionary = url.monkeyking_queryDictionary
                 guard let code = queryDictionary["code"] else {
                     shared.oauthFromWeChatCodeCompletionHandler = nil

@@ -192,7 +192,7 @@ extension UIImage {
     func monkeyking_resetSizeOfImageData(maxSize: Int) -> Data? {
 
         if let imageData = self.jpegData(compressionQuality: 1.0),
-            imageData.count <= maxSize {
+           imageData.count <= maxSize {
             return imageData
         }
 
@@ -294,5 +294,16 @@ extension Dictionary {
             let theJSONText = String(data: jsonData, encoding: .utf8)
         else { return nil }
         return theJSONText
+    }
+}
+
+extension NSKeyedArchiver {
+    class func archivedData(with rootObject: Any) -> Data {
+        do {
+            return try NSKeyedArchiver.archivedData(withRootObject: rootObject, requiringSecureCoding: false)
+        } catch {
+            print(error)
+        }
+        return Data()
     }
 }

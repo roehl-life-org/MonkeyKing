@@ -537,6 +537,7 @@
 				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = China/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 2.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nixWork.China;
@@ -556,6 +557,7 @@
 				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = China/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 2.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nixWork.China;

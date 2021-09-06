@@ -289,9 +289,8 @@ extension MonkeyKing {
             shared.setPasteboard(of: appID, with: weChatMessageInfo)
 
             if
-                let commandUniversalLink = shared.wechatUniversalLink(of: "sendreq"), #available(iOS 10.0, *),
-                let universalLink = MonkeyKing.shared.accountSet[.weChat]?.universalLink,
-                let ulURL = URL(string: commandUniversalLink)
+                let ulURL = shared.wechatUniversalLink(of: "sendreq"),
+                let universalLink = MonkeyKing.shared.accountSet[.weChat]?.universalLink
             {
                 weChatMessageInfo["universalLink"] = universalLink
                 weChatMessageInfo["isAutoResend"] = false
@@ -324,7 +323,7 @@ extension MonkeyKing {
                         if let oldText = UIPasteboard.general.oldText {
                             dic["pasted_string"] = oldText
                         }
-                        let data = NSKeyedArchiver.archivedData(withRootObject: dic)
+                        let data = NSKeyedArchiver.archivedData(with: dic)
                         UIPasteboard.general.setData(data, forPasteboardType: "com.tencent.mqq.api.apiLargeData")
                     }
                     qqSchemeURLString += mediaType ?? "news"
@@ -351,7 +350,7 @@ extension MonkeyKing {
                     if let oldText = UIPasteboard.general.oldText {
                         dic["pasted_string"] = oldText
                     }
-                    let data = NSKeyedArchiver.archivedData(withRootObject: dic)
+                    let data = NSKeyedArchiver.archivedData(with: dic)
                     UIPasteboard.general.setData(data, forPasteboardType: "com.tencent.mqq.api.apiLargeData")
                     qqSchemeURLString += "img"
                 case .imageData(let data), .gif(let data):
@@ -362,7 +361,7 @@ extension MonkeyKing {
                     if let oldText = UIPasteboard.general.oldText {
                         dic["pasted_string"] = oldText
                     }
-                    let archivedData = NSKeyedArchiver.archivedData(withRootObject: dic)
+                    let archivedData = NSKeyedArchiver.archivedData(with: dic)
                     UIPasteboard.general.setData(archivedData, forPasteboardType: "com.tencent.mqq.api.apiLargeData")
                     qqSchemeURLString += "img"
                 case .audio(let audioURL, _):
@@ -374,7 +373,7 @@ extension MonkeyKing {
                     if let oldText = UIPasteboard.general.oldText {
                         dic["pasted_string"] = oldText
                     }
-                    let data = NSKeyedArchiver.archivedData(withRootObject: dic)
+                    let data = NSKeyedArchiver.archivedData(with: dic)
                     UIPasteboard.general.setData(data, forPasteboardType: "com.tencent.mqq.api.apiLargeData")
                     qqSchemeURLString += "localFile"
                     if let filename = type.info.description?.monkeyking_urlEncodedString {
@@ -483,14 +482,14 @@ extension MonkeyKing {
                     "requestID": uuidString,
                 ]
                 let appData = NSKeyedArchiver.archivedData(
-                    withRootObject: [
+                    with: [
                         "appKey": appID,
                         "bundleID": Bundle.main.monkeyking_bundleID ?? "",
                         "universalLink": account.universalLink ?? ""
                     ]
                 )
                 let messageData: [[String: Any]] = [
-                    ["transferObject": NSKeyedArchiver.archivedData(withRootObject: dict)],
+                    ["transferObject": NSKeyedArchiver.archivedData(with: dict)],
                     ["app": appData],
                 ]
                 UIPasteboard.general.items = messageData
@@ -501,7 +500,6 @@ extension MonkeyKing {
                 }
 
                 if account.universalLink != nil,
-                   #available(iOS 10.0, *),
                    let ulURL = weiboUniversalLink(query: url.query) {
                         shared.openURL(ulURL, options: [.universalLinksOnly: true]) { succeed in
                             if !succeed {

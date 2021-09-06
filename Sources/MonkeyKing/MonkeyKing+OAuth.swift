@@ -60,8 +60,9 @@ extension MonkeyKing {
                 var urlComponents: URLComponents?
                 var wxUrlOptions = [UIApplication.OpenExternalURLOptionsKey : Any]()
 
-                if let universalLink = universalLink, let authLink = shared.wechatUniversalLink(of: "auth"), #available(iOS 10.0, *) {
-                    urlComponents = URLComponents(string: authLink)
+                if let universalLink = universalLink,
+                   let authUrl = shared.wechatUniversalLink(of: "auth") {
+                    urlComponents = URLComponents(url: authUrl, resolvingAgainstBaseURL: true)
                     urlComponents?.queryItems?.append(contentsOf: [
                         URLQueryItem(name: "scope", value: scope),
                         URLQueryItem(name: "state", value: "Weixinauth"), // Weixinauth instead?
@@ -108,7 +109,7 @@ extension MonkeyKing {
                     "status_os": UIDevice.current.systemVersion,
                     "status_version": UIDevice.current.systemVersion,
                 ]
-                let data = NSKeyedArchiver.archivedData(withRootObject: dic)
+                let data = NSKeyedArchiver.archivedData(with: dic)
                 UIPasteboard.general.setData(data, forPasteboardType: "com.tencent.tencent\(appID)")
 
                 var urlComponents = URLComponents(string: "mqqOpensdkSSoLogin://SSoLogin/tencent\(appID)/com.tencent.tencent\(appID)")
@@ -169,7 +170,6 @@ extension MonkeyKing {
                 }
 
                 if account.universalLink != nil,
-                   #available(iOS 10.0, *),
                    let ulURL = weiboUniversalLink(query: url.query) {
                         shared.openURL(ulURL, options: [.universalLinksOnly: true]) { succeed in
                             if !succeed {
@@ -228,7 +228,9 @@ extension MonkeyKing {
         }
     }
 
-    public class func weChatOAuthForCode(scope: String? = nil, requestToken: String? = nil, completionHandler: @escaping OAuthFromWeChatCodeCompletionHandler) {
+    public class func weChatOAuthForCode(scope: String? = nil,
+                                         state: String? = nil,
+                                         completionHandler: @escaping OAuthFromWeChatCodeCompletionHandler) {
         let platform = SupportedPlatform.weChat
 
         guard platform.isAppInstalled || platform.canWebOAuth else {
@@ -245,17 +247,24 @@ extension MonkeyKing {
         switch account {
         case .weChat(let appID, _, _, _):
             let scope = scope ?? "snsapi_userinfo"
+            let state = state ?? "Weixinauth"
 
-            var urlComponents = URLComponents(string: "weixin://app/\(appID)/auth/")
-            urlComponents?.queryItems = [
+            let items = [
                 URLQueryItem(name: "scope", value: scope),
-                URLQueryItem(name: "state", value: "Weixinauth"),
+                URLQueryItem(name: "state", value: state),
             ]
 
-            guard let url = urlComponents?.url else {
+            guard let url = shared.wechatUniversalLink(of: "auth", items: items),
+                  let universalLink = MonkeyKing.shared.accountSet[.weChat]?.universalLink else {
                 completionHandler(.failure(.sdk(.urlEncodeFailed)))
                 return
             }
+
+            shared.setPasteboard(of: appID, with: [
+                "universalLink": universalLink,
+                "isAuthResend": false,
+                "command": "0"
+            ])
 
             shared.openURL(url) { flag in
                 if flag { return }

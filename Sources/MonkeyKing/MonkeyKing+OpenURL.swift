@@ -15,21 +15,15 @@ extension MonkeyKing {
             completionHandler?(.failure(.apiRequest(.unrecognizedError(response: nil))))
         }
 
-        if let url = URL(string: scheme) {
-            if #available(iOS 10.0, *) {
-                UIApplication.shared.open(url, options: options) { flag in
-                    if !flag {
-                        handleErrorResult()
-                    }
-                }
-            } else {
-                let resutl = UIApplication.shared.openURL(url)
-                if !resutl {
-                    handleErrorResult()
-                }
-            }
-        } else {
+        guard let url = URL(string: scheme) else {
             handleErrorResult()
+            return
+        }
+
+        UIApplication.shared.open(url, options: options) { flag in
+            if !flag {
+                handleErrorResult()
+            }
         }
     }
 }

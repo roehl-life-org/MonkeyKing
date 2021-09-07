@@ -244,8 +244,7 @@ extension MonkeyKing {
 
         shared.oauthFromWeChatCodeCompletionHandler = completionHandler
 
-        switch account {
-        case .weChat(let appID, _, _, _):
+        if case .weChat(let appID, _, _, let universalLink) = account {
             let scope = scope ?? "snsapi_userinfo"
             let state = state ?? "Weixinauth"
 
@@ -255,7 +254,7 @@ extension MonkeyKing {
             ]
 
             guard let url = shared.wechatUniversalLink(of: "auth", items: items),
-                  let universalLink = MonkeyKing.shared.accountSet[.weChat]?.universalLink else {
+                  let universalLink = universalLink else {
                 completionHandler(.failure(.sdk(.urlEncodeFailed)))
                 return
             }
@@ -270,8 +269,6 @@ extension MonkeyKing {
                 if flag { return }
                 completionHandler(.failure(.sdk(.invalidURLScheme)))
             }
-        default:
-            break
         }
     }
 
@@ -281,7 +278,7 @@ extension MonkeyKing {
         let requestTokenAPI = "https://api.twitter.com/oauth/request_token"
         let oauthString = Networking.shared.authorizationHeader(for: .post, urlString: requestTokenAPI, appID: appID, appKey: appKey, accessToken: nil, accessTokenSecret: nil, parameters: ["oauth_callback": redirectURL], isMediaUpload: false)
         let oauthHeader = ["Authorization": oauthString]
-        Networking.shared.request(requestTokenAPI, method: .post, parameters: nil, encoding: .url, headers: oauthHeader) { responseData, _, _ in
+        Networking.shared.request(requestTokenAPI, method: .post, encoding: .url, headers: oauthHeader) { responseData, _, _ in
             if let responseData = responseData,
                 let requestToken = (responseData["oauth_token"] as? String) {
                 let loginURL = "https://api.twitter.com/oauth/authenticate?oauth_token=\(requestToken)"

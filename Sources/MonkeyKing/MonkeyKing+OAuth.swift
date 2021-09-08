@@ -19,7 +19,7 @@ extension MonkeyKing {
         shared.openSchemeCompletionHandler = nil
 
         switch account {
-        case .alipay(let appID):
+        case .alipay(let appID, _):
 
             guard let dataStr = dataString else {
                 completionHandler(.failure(.apiRequest(.missingParameter)))

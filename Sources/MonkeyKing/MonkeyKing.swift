@@ -35,7 +35,7 @@ public class MonkeyKing: NSObject {
         case qq(appID: String, universalLink: String?)
         case weibo(appID: String, appKey: String, redirectURL: String, universalLink: String? = nil)
         case pocket(appID: String)
-        case alipay(appID: String)
+        case alipay(appID: String, fromScheme: String)
         case twitter(appID: String, appKey: String, redirectURL: String)
 
         public var appID: String {
@@ -48,10 +48,19 @@ public class MonkeyKing: NSObject {
                 return appID
             case .pocket(let appID):
                 return appID
-            case .alipay(let appID):
+            case .alipay(let appID, _):
                 return appID
             case .twitter(let appID, _, _):
                 return appID
+            }
+        }
+
+        public var fromScheme: String? {
+            switch self {
+            case .alipay(_, let fromScheme):
+                return fromScheme
+            default:
+                return nil
             }
         }
 
@@ -76,7 +85,7 @@ public class MonkeyKing: NSObject {
                  (.qq(let lappID, _), .qq(let rappID, _)),
                  (.weibo(let lappID, _, _, _), .weibo(let rappID, _, _, _)),
                  (.pocket(let lappID), .pocket(let rappID)),
-                 (.alipay(let lappID), .alipay(let rappID)),
+                 (.alipay(let lappID, _), .alipay(let rappID, _)),
                  (.twitter(let lappID, _, _), .twitter(let rappID, _, _)):
                 return lappID == rappID
             case (.weChat, _),
@@ -117,10 +126,8 @@ public class MonkeyKing: NSObject {
 
         public var canWebOAuth: Bool {
             switch self {
-            case .qq, .weibo, .pocket, .weChat, .twitter:
+            case .qq, .weibo, .pocket, .weChat, .twitter, .alipay:
                 return true
-            case .alipay:
-                return false
             }
         }
     }

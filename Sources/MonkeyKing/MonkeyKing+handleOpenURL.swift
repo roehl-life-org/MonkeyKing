@@ -359,81 +359,12 @@ extension MonkeyKing {
 
         // WeChat
         if urlScheme.hasPrefix("wx") {
-            let urlString = url.absoluteString
-            // OAuth
-            if urlString.contains("state=") {
-                let queryDictionary = url.monkeyking_queryDictionary
-                guard let code = queryDictionary["code"] else {
-                    shared.oauthFromWeChatCodeCompletionHandler = nil
-                    return false
-                }
-
-                if handleWechatOAuth(code: code) {
-                    return true
-                }
-            }
-            // SMS OAuth
-            if urlString.contains("wapoauth") {
-                let queryDictionary = url.monkeyking_queryDictionary
-                guard let m = queryDictionary["m"] else { return false }
-                guard let t = queryDictionary["t"] else { return false }
-                guard let account = shared.accountSet[.weChat] else { return false }
-                let appID = account.appID
-                let urlString = "https://open.weixin.qq.com/connect/smsauthorize?appid=\(appID)&redirect_uri=\(appID)%3A%2F%2Foauth&response_type=code&scope=snsapi_message,snsapi_userinfo,snsapi_friend,snsapi_contact&state=xxx&uid=1926559385&m=\(m)&t=\(t)"
-                addWebView(withURLString: urlString)
-                return true
-            }
-            // Pay
-            if urlString.contains("://pay/") {
-                let queryDictionary = url.monkeyking_queryDictionary
-
-                guard let ret = queryDictionary["ret"] else {
-                    shared.payCompletionHandler?(.failure(.apiRequest(.missingParameter)))
-                    return false
-                }
-
-                let result = (ret == "0")
-
-                if result {
-                    shared.payCompletionHandler?(.success(()))
-                } else {
-                    shared.payCompletionHandler?(.failure(.apiRequest(.unrecognizedError(response: queryDictionary))))
-                }
-
-                return result
-            }
-
-            return handleWechatCallbackResultViaPasteboard()
+            return handleWechatUrl(url)
         }
 
         // QQ
         if urlScheme.lowercased().hasPrefix("qq") || urlScheme.hasPrefix("tencent") {
-            let errorDescription = url.monkeyking_queryDictionary["error"] ?? url.lastPathComponent
-
-            var error: Error?
-
-            var success = (errorDescription == "0")
-            if success {
-                error = nil
-            } else {
-                error = errorDescription == "-4"
-                    ? .userCancelled
-                    : .sdk(.other(code: errorDescription))
-            }
-
-            // OAuth
-            if url.path.contains("mqzone") {
-                success = handleQQCallbackResult(url: url, error: error)
-            }
-            // Share
-            else {
-                if let error = error {
-                    shared.deliverCompletionHandler?(.failure(error))
-                } else {
-                    shared.deliverCompletionHandler?(.success(nil))
-                }
-            }
-            return success
+            return handleQQUrl(url)
         }
 
         // Weibo
@@ -449,58 +380,8 @@ extension MonkeyKing {
 
         // Alipay
         let account = shared.accountSet[.alipay]
-        if let appID = account?.appID, urlScheme == "ap" + appID || urlScheme == "apoauth" + appID {
-            let urlString = url.absoluteString
-            if urlString.contains("//safepay/?") {
-
-                guard
-                    let query = url.query,
-                    let response = query.monkeyking_urlDecodedString?.data(using: .utf8),
-                    let json = response.monkeyking_json,
-                    let memo = json["memo"] as? [String: Any],
-                    let status = memo["ResultStatus"] as? String
-                else {
-                    shared.oauthCompletionHandler?(.failure(.apiRequest(.missingParameter)))
-                    shared.payCompletionHandler?(.failure(.apiRequest(.missingParameter)))
-                    return false
-                }
-
-                if status != "9000" {
-                    shared.oauthCompletionHandler?(.failure(.apiRequest(.invalidParameter)))
-                    shared.payCompletionHandler?(.failure(.apiRequest(.invalidParameter)))
-                    return false
-                }
-
-                if urlScheme == "apoauth" + appID { // OAuth
-                    let resultStr = memo["result"] as? String ?? ""
-                    let urlStr = "https://www.example.com?" + resultStr
-                    let resultDic = URL(string: urlStr)?.monkeyking_queryDictionary ?? [:]
-                    if let _ = resultDic["auth_code"], let _ = resultDic["scope"] {
-                        shared.oauthCompletionHandler?(.success(resultDic))
-                        return true
-                    }
-                    shared.oauthCompletionHandler?(.failure(.apiRequest(.unrecognizedError(response: resultDic))))
-                    return false
-                } else { // Pay
-                    shared.payCompletionHandler?(.success(()))
-                }
-                return true
-            } else { // Share
-                guard
-                    let data = UIPasteboard.general.data(forPasteboardType: "com.alipay.openapi.pb.resp.\(appID)"),
-                    let dict = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
-                    let objects = dict["$objects"] as? NSArray,
-                    let result = objects[12] as? Int else {
-                    return false
-                }
-                let success = (result == 0)
-                if success {
-                    shared.deliverCompletionHandler?(.success(nil))
-                } else {
-                    shared.deliverCompletionHandler?(.failure(.sdk(.other(code: String(result))))) // TODO: user cancelled
-                }
-                return success
-            }
+        if urlScheme == account?.fromScheme {
+            return handleAlipayUrl(url)
         }
 
         if let handler = shared.openSchemeCompletionHandler {
@@ -509,5 +390,137 @@ extension MonkeyKing {
         }
 
         return false
+    }
+
+    private static func handleWechatUrl(_ url: URL) -> Bool {
+        let urlString = url.absoluteString
+        // OAuth
+        if urlString.contains("state=") {
+            let queryDictionary = url.monkeyking_queryDictionary
+            guard let code = queryDictionary["code"] else {
+                shared.oauthFromWeChatCodeCompletionHandler = nil
+                return false
+            }
+
+            if handleWechatOAuth(code: code) {
+                return true
+            }
+        }
+        // SMS OAuth
+        if urlString.contains("wapoauth") {
+            let queryDictionary = url.monkeyking_queryDictionary
+            guard let m = queryDictionary["m"] else { return false }
+            guard let t = queryDictionary["t"] else { return false }
+            guard let account = shared.accountSet[.weChat] else { return false }
+            let appID = account.appID
+            let urlString = "https://open.weixin.qq.com/connect/smsauthorize?appid=\(appID)&redirect_uri=\(appID)%3A%2F%2Foauth&response_type=code&scope=snsapi_message,snsapi_userinfo,snsapi_friend,snsapi_contact&state=xxx&uid=1926559385&m=\(m)&t=\(t)"
+            addWebView(withURLString: urlString)
+            return true
+        }
+        // Pay
+        if urlString.contains("://pay/") {
+            let queryDictionary = url.monkeyking_queryDictionary
+
+            guard let ret = queryDictionary["ret"] else {
+                shared.payCompletionHandler?(.failure(.apiRequest(.missingParameter)))
+                return false
+            }
+
+            let result = (ret == "0")
+
+            if result {
+                shared.payCompletionHandler?(.success(()))
+            } else {
+                shared.payCompletionHandler?(.failure(.apiRequest(.unrecognizedError(response: queryDictionary))))
+            }
+
+            return result
+        }
+
+        return handleWechatCallbackResultViaPasteboard()
+    }
+
+    private static func handleQQUrl(_ url: URL) -> Bool {
+        let errorDescription = url.monkeyking_queryDictionary["error"] ?? url.lastPathComponent
+
+        var error: Error?
+
+        var success = (errorDescription == "0")
+        if !success {
+            error = errorDescription == "-4"
+                ? .userCancelled
+                : .sdk(.other(code: errorDescription))
+        }
+
+        // OAuth
+        if url.path.contains("mqzone") {
+            success = handleQQCallbackResult(url: url, error: error)
+        }
+        // Share
+        else {
+            if let error = error {
+                shared.deliverCompletionHandler?(.failure(error))
+            } else {
+                shared.deliverCompletionHandler?(.success(nil))
+            }
+        }
+        return success
+    }
+
+    private static func handleAlipayUrl(_ url: URL) -> Bool {
+        let account = shared.accountSet[.alipay]
+        guard let appID = account?.appID else { return false }
+
+        let urlString = url.absoluteString
+        if urlString.contains("//safepay/?") {
+
+            guard
+                let query = url.query,
+                let response = query.monkeyking_urlDecodedString?.data(using: .utf8),
+                let json = response.monkeyking_json,
+                let memo = json["memo"] as? [String: Any],
+                let status = memo["ResultStatus"] as? String
+            else {
+                shared.oauthCompletionHandler?(.failure(.apiRequest(.missingParameter)))
+                shared.payCompletionHandler?(.failure(.apiRequest(.missingParameter)))
+                return false
+            }
+
+            if status != "9000" {
+                shared.oauthCompletionHandler?(.failure(.apiRequest(.invalidParameter)))
+                shared.payCompletionHandler?(.failure(.apiRequest(.invalidParameter)))
+                return false
+            }
+
+            if url.scheme == account?.fromScheme { // OAuth
+                let resultStr = memo["result"] as? String ?? ""
+                let urlStr = "https://www.example.com?" + resultStr
+                let resultDic = URL(string: urlStr)?.monkeyking_queryDictionary ?? [:]
+                if let _ = resultDic["auth_code"], let _ = resultDic["scope"] {
+                    shared.oauthCompletionHandler?(.success(resultDic))
+                    return true
+                }
+                shared.oauthCompletionHandler?(.failure(.apiRequest(.unrecognizedError(response: resultDic))))
+                return false
+            } else { // Pay
+                shared.payCompletionHandler?(.success(()))
+            }
+            return true
+        } else { // Share
+            guard
+                let data = UIPasteboard.general.data(forPasteboardType: "com.alipay.openapi.pb.resp.\(appID)"),
+                let dict = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+                let objects = dict["$objects"] as? NSArray,
+                let result = objects[12] as? Int else {
+                return false
+            }
+            let success = (result == 0)
+            if success {
+                shared.deliverCompletionHandler?(.success(nil))
+            } else {
+                shared.deliverCompletionHandler?(.failure(.sdk(.other(code: String(result))))) // TODO: user cancelled
+            }
+            return success
+        }
     }
 }

@@ -12,7 +12,7 @@ class AlipayViewController: UIViewController {
 
     private func registerAccount() {
         // Distinguish from authorization
-        let account = MonkeyKing.Account.alipay(appID: Configs.Alipay.appID)
+        let account = MonkeyKing.Account.alipay(appID: Configs.Alipay.appID, fromScheme: "fromScheme")
         MonkeyKing.registerAccount(account)
     }
 
@@ -101,13 +101,13 @@ class AlipayViewController: UIViewController {
         let appID = Configs.Alipay.oauthID
         let pid = Configs.Alipay.pid
 
-        let account = MonkeyKing.Account.alipay(appID: appID)
+        let account = MonkeyKing.Account.alipay(appID: appID, fromScheme: "fromScheme")
         MonkeyKing.registerAccount(account)
 
         // ref: https://docs.open.alipay.com/218/105327
         // 获取私钥并将商户信息签名,外部商户可以根据情况存放私钥和签名,只需要遵循RSA签名规范,并将签名字符串base64编码和UrlEncode
-        let signType: String = "RSA"
-        let sign: String = "RIJ7binMneL9f1OITLXeGfTeDJwgPeZ5Aqk1nPlCHfL1q1hnSUx4x%2BgmmnxDpzJ%2F9K6fzdytkDFlsgcnAUQx2jzAysniUDSFdbKzpacsLXSFJvINUNYowUfR%2FgaY%2FiDV9PICo%2B8Zs4az%2FChoTvxLUbZrFVufSthf2ySBbBNDlck%3D"
+        let signType = "RSA"
+        let sign = "RIJ7binMneL9f1OITLXeGfTeDJwgPeZ5Aqk1nPlCHfL1q1hnSUx4x%2BgmmnxDpzJ%2F9K6fzdytkDFlsgcnAUQx2jzAysniUDSFdbKzpacsLXSFJvINUNYowUfR%2FgaY%2FiDV9PICo%2B8Zs4az%2FChoTvxLUbZrFVufSthf2ySBbBNDlck%3D"
 
         let dic: [String: String] = [
             "apiname": "com.alipay.account.auth",

@@ -118,7 +118,11 @@ extension MonkeyKing {
         webView.navigationDelegate = shared
         webView.backgroundColor = UIColor(red: 247 / 255, green: 247 / 255, blue: 247 / 255, alpha: 1.0)
         webView.scrollView.backgroundColor = webView.backgroundColor
-        UIApplication.shared.keyWindow?.addSubview(webView)
+        UIApplication.shared.connectedScenes
+            .filter({$0.activationState == .foregroundActive})
+            .compactMap({ $0 as? UIWindowScene })
+            .first?.windows
+            .first(where: { $0.isKeyWindow })?.addSubview(webView)
         return webView
     }
 
@@ -130,7 +134,7 @@ extension MonkeyKing {
         webView.load(URLRequest(url: url))
         let activityIndicatorView = UIActivityIndicatorView(frame: CGRect(x: 0.0, y: 0.0, width: 20.0, height: 20.0))
         activityIndicatorView.center = CGPoint(x: webView.bounds.midX, y: webView.bounds.midY + 30.0)
-        activityIndicatorView.style = .gray
+        activityIndicatorView.style = .medium
         webView.scrollView.addSubview(activityIndicatorView)
         activityIndicatorView.startAnimating()
         UIView.animate(withDuration: 0.32, delay: 0.0, options: .curveEaseOut, animations: {

@@ -306,17 +306,16 @@ extension String {
     var queryStringParameters: [String: String] {
         var parameters = [String: String]()
         let scanner = Scanner(string: self)
-        var key: NSString?
-        var value: NSString?
+        var key: String?
+        var value: String?
         while !scanner.isAtEnd {
-            key = nil
-            scanner.scanUpTo("=", into: &key)
-            scanner.scanString("=", into: nil)
+            key = scanner.scanUpToString("=")
+            _ = scanner.scanString("=")
             value = nil
-            scanner.scanUpTo("&", into: &value)
-            scanner.scanString("&", into: nil)
-            if let key = key as String?, let value = value as String? {
-                parameters.updateValue(value, forKey: key)
+            value = scanner.scanUpToString("&")
+            _ = scanner.scanString("&")
+            if let key = key, let value = value {
+                parameters[key] = value
             }
         }
         return parameters

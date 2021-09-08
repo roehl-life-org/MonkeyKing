@@ -179,7 +179,7 @@ extension MonkeyKing {
         if
             let actionInfoString = comps.queryItems?.first(where: { $0.name == "sdkactioninfo" })?.value,
             let data = Data(base64Encoded: actionInfoString),
-            let actionInfo = NSKeyedUnarchiver.unarchiveObject(with: data) as? [String: Any] {
+            let actionInfo = actionInfo(with: data) {
 
             // What for?
             // sck_action_query=appsign_bundlenull=2&source=qq&source_scheme=mqqapi&error=0&version=1
@@ -207,6 +207,10 @@ extension MonkeyKing {
         return true
     }
 
+    private class func actionInfo(with data: Data) -> [String: Any]? {
+        return try? NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? [String: Any]
+    }
+
     private class func handleQQCallbackResult(url: URL, error: Error?) -> Bool {
         guard let account = shared.accountSet[.qq] else { return false }
 
@@ -224,7 +228,7 @@ extension MonkeyKing {
         // OpenApi.m:131 getDictionaryFromGeneralPasteBoard
         guard
             let data = UIPasteboard.general.data(forPasteboardType: "com.tencent.tencent\(account.appID)"),
-            let info = NSKeyedUnarchiver.unarchiveObject(with: data) as? [String: Any]
+            let info = actionInfo(with: data)
         else {
             shared.oauthCompletionHandler?(.failure(.sdk(.deserializeFailed)))
             return false
@@ -257,7 +261,7 @@ extension MonkeyKing {
 
             // Try to open the redirect url provided above
             if let redirectUrl = redirectComps.url, UIApplication.shared.canOpenURL(redirectUrl) {
-                UIApplication.shared.openURL(redirectUrl)
+                UIApplication.shared.open(redirectUrl)
             }
 
             // Otherwise we just send last message again
@@ -308,7 +312,7 @@ extension MonkeyKing {
         for item in items {
             for (key, value) in item {
                 if let valueData = value as? Data, key == "transferObject" {
-                    results[key] = NSKeyedUnarchiver.unarchiveObject(with: valueData)
+                    results[key] = actionInfo(with: valueData)
                 }
             }
         }

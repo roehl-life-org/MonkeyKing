@@ -136,7 +136,7 @@ extension MonkeyKing {
             guard !platform.isAppInstalled else {
                 let uuidString = UUID().uuidString
                 let transferObjectData = NSKeyedArchiver.archivedData(
-                    withRootObject: [
+                    with: [
                         "__class": "WBAuthorizeRequest",
                         "redirectURI": redirectURL,
                         "requestID": uuidString,
@@ -144,13 +144,13 @@ extension MonkeyKing {
                     ]
                 )
                 let userInfoData = NSKeyedArchiver.archivedData(
-                    withRootObject: [
+                    with: [
                         "mykey": "as you like",
                         "SSO_From": "SendMessageToWeiboViewController",
                     ]
                 )
                 let appData = NSKeyedArchiver.archivedData(
-                    withRootObject: [
+                    with: [
                         "appKey": appID,
                         "bundleID": Bundle.main.monkeyking_bundleID ?? "",
                         "name": Bundle.main.monkeyking_displayName ?? "",
